@@ -4,8 +4,59 @@ let timeLimit = 30;
 let countDown;
 let initialSpeed = 2;
 let bugsKilled = 0;
+let bgMusic;
+
+let sounds = new Tone.Players({
+  'deadBug': "Assets/deadBug.wav"
+}).toDestination();
+
+bgMusic = new Tone.Player("Assets/SquishGameMusic.mp3").toDestination();
+bgMusic.loop = true;
+
+menuMusic = new Tone.Player("Assets/SquishGameMusic.mp3").toDestination();
+menuMusic.loop = true;
+
+
+let startButton;
+let playAgainButton;
 
 function preload(){
+ 
+}
+
+function setup() {
+
+  createCanvas(800, 400);
+  
+  startButton = createButton('Start Game');
+  startButton.position(width / 2 - startButton.width / 2, height / 2);
+  startButton.mousePressed(startGame);
+  
+
+  playAgainButton = createButton('Play Again');
+  playAgainButton.position(width / 2 - playAgainButton.width / 2, height / 2 + 140);
+  playAgainButton.hide();
+  playAgainButton.mousePressed(startGame);
+
+}
+
+function startGame(){
+  startButton.hide();
+  playAgainButton.hide();
+
+  bugsKilled = 0; //resetting score
+ 
+  countDown = timeLimit; //resetting countDown
+
+  // reset bugs
+  bugs.forEach(bug => {
+    bug.isKilled = false;
+    bug.sprite.changeAni('walkRight');
+    bug.sprite.x = random(width);
+    bug.sprite.y = random(height);
+  });
+  bgMusic.start(); 
+
   let animation = {
     dead: { row: 0, col: 6, frames: 1 },
     walkRight: { row: 0, frames: 5},
@@ -41,22 +92,19 @@ function preload(){
   bugs.push(bug28 = new Bug(163,363,32,32,'Assets/Bugx4.png',animation));
   bugs.push(bug29 = new Bug(167,159,32,32,'Assets/Bugx4.png',animation));
   bugs.push(bug30 = new Bug(293,283,32,32,'Assets/Bugx4.png',animation));
-  
-}
-
-function setup() {
-  createCanvas(800, 400);
 }
 
 function mousePressed(){
+  
   for (let bug of bugs){
     if(
       mouseX >= bug.sprite.x - bug.sprite.width / 2 &&
       mouseX <= bug.sprite.x + bug.sprite.width / 2 &&
       mouseY >= bug.sprite.y - bug.sprite.height / 2 &&
       mouseY <= bug.sprite.y + bug.sprite.height / 2){
-
+        sounds.player("deadBug").start();
         bug.stop();
+        
     }
   }
 }
@@ -83,11 +131,21 @@ function draw() {
     if (countDown < 0){
       countDown = 0;
       textSize(50);
+      fill('red');
       text("Game\nOver", width / 2 - 75, height / 2);
+      textSize(20);
+      fill('white');
+      text("Score: " + bugsKilled, width / 2 - 60, height / 2 + 120);
+
+      playAgainButton.show();
+
+      bgMusic.stop();
       bug.stop();
+    
     } 
 
     bug.update();
+
   });
 
  
@@ -99,8 +157,9 @@ function draw() {
 
 
 class Bug{
-  
-  constructor(x,y,width,height,spriteSheet,animation){
+
+  constructor(x,y,width,height,spriteSheet,animation,player){
+
   this.sprite = new Sprite(x,y,width,height);
   this.sprite.spriteSheet = spriteSheet;
   
@@ -111,22 +170,27 @@ class Bug{
   this.sprite.changeAni('walkRight');
 
   this.isKilled = false;
+
+  this.player = player;
   }
 
   walkRight(){
     this.sprite.changeAni('walkRight');
-    
-    this.sprite.vel.x = 2;
+    this.setVelocity(2);
     this.sprite.scale.x = 1;
     this.sprite.vel.y = 0;
    }
    
    walkLeft(){
      this.sprite.changeAni('walkRight');
-     
-     this.sprite.vel.x = -2;
+     this.setVelocity(-2);
      this.sprite.scale.x = -1;
      this.sprite.vel.y = 0;
+   }
+
+   setVelocity(speed){
+    this.sprite.vel.x = speed;
+    this.sprite.vel.y = 0;
    }
    
    stop(){
@@ -144,7 +208,12 @@ class Bug{
             otherBug.increaseSpeed(speedIncrease);
           }
         }
+
+        this.player.start();
+
+        
       }
+      
    }
 
    update(){
