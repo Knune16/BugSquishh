@@ -5,17 +5,16 @@ let countDown;
 let initialSpeed = 2;
 let bugsKilled = 0;
 let bgMusic;
+let bgSynth;
+let pitchChangeInterval;
 
 let sounds = new Tone.Players({
-  'deadBug': "Assets/deadBug.wav"
+  'deadBug': "Assets/deadBug.wav",
+  'GameOver': "Assets/GameOverSound.wav",
 }).toDestination();
 
 bgMusic = new Tone.Player("Assets/SquishGameMusic.mp3").toDestination();
 bgMusic.loop = true;
-
-menuMusic = new Tone.Player("Assets/SquishGameMusic.mp3").toDestination();
-menuMusic.loop = true;
-
 
 let startButton;
 let playAgainButton;
@@ -38,6 +37,15 @@ function setup() {
   playAgainButton.hide();
   playAgainButton.mousePressed(startGame);
 
+  bgSynth = new Tone.Synth({
+    oscillator: {
+      type: 'sine'
+    },
+    frequency: 440,
+  
+  }).toDestination();
+
+  
 }
 
 function startGame(){
@@ -55,7 +63,6 @@ function startGame(){
     bug.sprite.x = random(width);
     bug.sprite.y = random(height);
   });
-  bgMusic.start(); 
 
   let animation = {
     dead: { row: 0, col: 6, frames: 1 },
@@ -92,6 +99,14 @@ function startGame(){
   bugs.push(bug28 = new Bug(163,363,32,32,'Assets/Bugx4.png',animation));
   bugs.push(bug29 = new Bug(167,159,32,32,'Assets/Bugx4.png',animation));
   bugs.push(bug30 = new Bug(293,283,32,32,'Assets/Bugx4.png',animation));
+
+  bgMusic.start(); 
+
+  pitchChangeInterval = setInterval(() => {
+    const pitchChange = map(countDown, timeLimit, 0, -1200, 1200);
+    bgSynth.frequency.value += pitchChange;
+  }, 1000);
+  bgSynth.start();
 }
 
 function mousePressed(){
@@ -139,9 +154,13 @@ function draw() {
 
       playAgainButton.show();
 
+      bgSynth.triggerRelease();
+      clearInterval(pitchChangeInterval)
       bgMusic.stop();
+      sounds.player("GameOver").start();
       bug.stop();
-    
+      
+      
     } 
 
     bug.update();
